@@ -1,0 +1,375 @@
+Question Title,Question Body,Answer Body,Tags
+Cocoapods not found by flutter,"<p>i have successfully (re)installed them, with</p>
+<p><code>sudo gem uninstall cocoapods &amp;&amp; sudo gem install cocoapods</code></p>
+<p>but they are not found by flutter (<code>flutter doctor</code> keeps giving <code>cocoapods not installed</code>).</p>
+<p>it might be because of two different ruby versions.</p>
+<p>the executable <code>pod</code> is not found indeed...(<code>which pod</code>)</p>
+<p>relevant executables are:</p>
+<ul>
+<li>ruby 3.1.2 is in /usr/local/opt/ruby/bin/ruby</li>
+<li>/usr/local/lib/ruby/gems/3.1.0/bin/sandbox-pod.</li>
+<li>/usr/local/lib/ruby/gems/3.1.0/bin/pod</li>
+</ul>
+<p>my bash setup file has:</p>
+<pre><code># ruby
+export path=&quot;/usr/local/opt/ruby/bin:$path&quot;
+export ldflags=&quot;-l/usr/local/opt/ruby/lib&quot;
+export cppflags=&quot;-i/usr/local/opt/ruby/include&quot;
+export pkg_config_path=&quot;/usr/local/opt/ruby/lib/pkgconfig&quot;
+</code></pre>
+<p>any idea?</p>
+<p>ps: i am on <a href=""https://en.wikipedia.org/wiki/macos_monterey"" rel=""nofollow noreferrer"">macos v12</a> (monterey)</p>","<p>installing using brew fix the issue</p>
+<p>remember  to run <code>brew link --overwrite cocoapods</code></p>",Ruby;flutter;rubygems;cocoapods
+Split audio files using silence detection,"<p>i've more than 200 mp3 files and i need to split each one of them by using silence detection. i tried audacity and wavepad but they do not have batch processes and it's very slow to make them one by one.</p>
+
+<p>the scenario is as follows:</p>
+
+<ul>
+<li>split track whereas silence 2 seconds or more</li>
+<li>then add 0.5 s at the start and the end of these tracks and save them as .mp3</li>
+<li>bitrate 192 stereo </li>
+<li>normalize volume to be sure that all files are the same volume and quality</li>
+</ul>
+
+<p>i tried ffmpeg but no success.</p>","<p>i found <a href=""https://github.com/jiaaro/pydub"" rel=""noreferrer"">pydub</a> to be easiest tool to do this kind of audio manipulation in simple ways and with compact code.</p>
+
+<p>you can install <a href=""https://github.com/jiaaro/pydub"" rel=""noreferrer"">pydub</a> with</p>
+
+<pre><code>pip install pydub
+</code></pre>
+
+<p>you may need to install ffmpeg/avlib if needed. see <a href=""https://github.com/jiaaro/pydub"" rel=""noreferrer"">this link</a> for more details.</p>
+
+<p>here is a snippet that does what you asked. some of the parameters such as <code>silence_threshold</code> and <code>target_dbfs</code> may need some tuning to match your requirements.
+overall, i was able to split <code>mp3</code> files, although i had to try different values for <code>silence_threshold</code>.</p>
+
+<p><strong>snippet</strong></p>
+
+<pre><code># import the audiosegment class for processing audio and the 
+# split_on_silence function for separating out silent chunks.
+from pydub import audiosegment
+from pydub.silence import split_on_silence
+
+# define a function to normalize a chunk to a target amplitude.
+def match_target_amplitude(achunk, target_dbfs):
+    ''' normalize given audio chunk '''
+    change_in_dbfs = target_dbfs - achunk.dbfs
+    return achunk.apply_gain(change_in_dbfs)
+
+# load your audio.
+song = audiosegment.from_mp3(""your_audio.mp3"")
+
+# split track where the silence is 2 seconds or more and get chunks using 
+# the imported function.
+chunks = split_on_silence (
+    # use the loaded audio.
+    song, 
+    # specify that a silent chunk must be at least 2 seconds or 2000 ms long.
+    min_silence_len = 2000,
+    # consider a chunk silent if it's quieter than -16 dbfs.
+    # (you may want to adjust this parameter.)
+    silence_thresh = -16
+)
+
+# process each chunk with your parameters
+for i, chunk in enumerate(chunks):
+    # create a silence chunk that's 0.5 seconds (or 500 ms) long for padding.
+    silence_chunk = audiosegment.silent(duration=500)
+
+    # add the padding chunk to beginning and end of the entire chunk.
+    audio_chunk = silence_chunk + chunk + silence_chunk
+
+    # normalize the entire chunk.
+    normalized_chunk = match_target_amplitude(audio_chunk, -20.0)
+
+    # export the audio chunk with new bitrate.
+    print(""exporting chunk{0}.mp3."".format(i))
+    normalized_chunk.export(
+        "".//chunk{0}.mp3"".format(i),
+        bitrate = ""192k"",
+        format = ""mp3""
+    )
+</code></pre>
+
+<p>if your original audio is stereo (2-channel), your chunks will also be stereo.
+you can check the original audio like this:</p>
+
+<pre><code>&gt;&gt;&gt; song.channels
+2
+</code></pre>",Python;batch-file;audio;split;ffmpeg
+How to access resource with dynamic name in my case?,"<p>if i get the image name as a variable like following:</p>
+
+<pre><code>var imagename = service.getimg();
+</code></pre>
+
+<p>then, how can i get the resource with <code>r.drawable.????</code>, i tried <code>r.drawable[imagename]</code>, but it failed. any suggestions?</p>","<pre><code>int id = getresources().getidentifier(imagename, type, package);
+</code></pre>
+
+<p><a href=""http://developer.android.com/reference/android/content/res/resources.html#getidentifier%28java.lang.string,%20java.lang.string,%20java.lang.string%29"" rel=""noreferrer"">this will get you the id of the resource you are looking for.</a>  with it, you can then access the resource from the r class.</p>
+
+<p><strong>using only the <code>name</code> parameter:</strong></p>
+
+<p>you can also include all the 3 info in the ""name"" parameter using the following format: <code>""package:type/image_name""</code>, something like:</p>
+
+<pre><code>int id = getresources().getidentifier(""com.my.app:drawable/my_image"", null, null);
+</code></pre>
+
+<p>this is useful when you're working with external components or libraries that you can't, or don't want to, change how <code>getidentifier()</code> is called. e.g.: <a href=""https://android.googlesource.com/platform/packages/apps/launcher3/+/o-preview/src/com/android/launcher3/utilities.java#176"" rel=""noreferrer"">aosp launcher3</a></p>",Android;android-layout;android-emulator;android-widget;android-ndk
+How to send other data when connected socket tcpclient in windowsforms using networkstream?,"<p>i have a connection that using tcpclient, to send and receive data between server and client . the application is written on the basis of window form, i have used backgroundworker to handle parallel running tasks. the program runs normally when i clicked start button, it receives data handshake from the client side and sends the data back to the client. i want to add a function to send new content from textbox, like sample fill up data to textbox1 and click send button, it will be sent to the client from server in parallel during the connection between server and client. but when i add this, i get an error returning &quot;cannot access a disposed object. object name: system.net.sockets.networkstream&quot; at this line &quot;stream.write(msg_byte, 0, msg_byte.length);&quot; and data is not sent. what did i do wrong, can you point it out to me. this is my snipped code below</p>
+<pre><code>using system;
+using system.collections.generic;
+using system.componentmodel;
+using system.data;
+using system.drawing;
+using system.io;
+using system.linq;
+using system.net;
+using system.net.sockets;
+using system.text;
+using system.text.regularexpressions;
+using system.threading;
+using system.threading.tasks;
+using system.windows.forms;
+using system.xml.linq;
+using static system.windows.forms.visualstyles.visualstyleelement;
+
+namespace server
+{
+    public partial class form1 : form
+    {
+        backgroundworker bw;
+        static networkstream stream = null;
+
+        public form1()
+        {
+            initializecomponent();
+
+            bw = new backgroundworker();
+            bw.workerreportsprogress = true;
+            bw.workersupportscancellation = true;
+            bw.dowork += bw_dowork;
+            bw.progresschanged += bw_progresschanged;
+            bw.runworkercompleted += bw_runworkercompleted;
+        }
+
+        private void _startserver(string _ip, int _port)
+        {
+            tcplistener server = null;
+            try
+            {
+                server = new tcplistener(ipaddress.parse(_ip), _port);
+                server.start();
+                byte[] bytes = new byte[1024];
+                string data = null;
+                while (true)
+                {
+                    tcpclient client = server.accepttcpclient();
+                    txt_log.invoke((action)(() =&gt;
+                    {
+                        txt_log.appendtext(datetime.now.tostring() + &quot; connnected &quot; + client.client.remoteendpoint.tostring() + &quot;\r\n&quot;);
+                    }));
+                    data = null;
+                    networkstream stream = client.getstream();
+                    int i;
+                    while ((i = stream.read(bytes, 0, bytes.length)) != 0)
+                    {
+                        data = encoding.ascii.getstring(bytes, 0, i);
+                        txt_log.invoke((action)(() =&gt;
+                        {
+                            txt_log.appendtext(datetime.now.tostring() + &quot; received: &quot; + data + &quot;\r\n&quot;);
+                        }));
+                     
+                        data = data.toupper();
+                        byte[] msg = encoding.ascii.getbytes(data);
+                        stream.write(msg, 0, msg.length);
+                        txt_log.invoke((action)(() =&gt;
+                        {
+                            txt_log.appendtext(datetime.now.tostring() + &quot; sent: &quot; + data + &quot;\r\n&quot;);
+                        }));                
+                    }
+                }
+            }
+            catch (socketexception ex)
+            {
+                messagebox.show(&quot;_startserver: &quot; + ex.message);
+            }
+        }
+
+        void bw_runworkercompleted(object sender, runworkercompletedeventargs e)
+        {
+            messagebox.show(&quot;completed&quot;);
+        }
+
+        void bw_progresschanged(object sender, progresschangedeventargs e)
+        {
+            if (!bw.cancellationpending)
+            {
+                messagebox.show(&quot;processing&quot;);
+            }
+        }
+
+        void bw_dowork(object sender, doworkeventargs e)
+        {
+            _startserver(&quot;192.168.10.15&quot;, 4444);
+            bw.reportprogress(100);
+        }
+
+        private void bt_start_click(object sender, eventargs e)
+        {
+            if (bw.isbusy)
+            {
+                bw.cancelasync();
+            }
+            else
+            {
+                txt_log.clear();
+                bw.runworkerasync();
+            }
+        }
+
+        private void bt_stop_click(object sender, eventargs e)
+        {
+            bw.cancelasync();
+            if (stream != null)
+            {
+                stream.dispose();
+            }
+        }
+
+        private void bt_send_click(object sender, eventargs e)
+        {
+            string msg_send = txt_msg.text;
+            byte[] msg_byte = encoding.ascii.getbytes(msg_send);
+            
+            while (true)
+            {
+                stream.write(msg_byte, 0, msg_byte.length);
+                txt_log.invoke((action)(() =&gt;
+                {
+                    txt_log.appendtext(datetime.now.tostring() + &quot; sent new data: &quot; + msg_send + &quot;\r\n&quot;);
+                })); 
+                
+                string msg_receive = null;
+                byte[] temp_byte = new byte[1024];
+                stream.read(temp_byte, 0, temp_byte.length);
+                msg_receive = encoding.ascii.getstring(temp_byte);
+                txt_log.invoke((action)(() =&gt;
+                {
+                    txt_log.appendtext(datetime.now.tostring() + &quot; received new data: &quot; + msg_receive + &quot;\r\n&quot;);
+                }));
+            }   
+        }
+
+
+    }
+}
+</code></pre>
+<p>the situation is open connection to server from the client, on the one hand, always keep the connection from the server to the client by sending temporary data continuously, like the client side always sending &quot;are you there?&quot; , the server always replied &quot;ok, here i am&quot; when get signal data temp from client, this way is working good for me, no issue. on the other hand, i would like to have other signals sent from the server to the client according to what the user enters into the textbox component, i just try and thinking the best way to do it.</p>
+<p>after some change, make code is easier to look</p>
+<pre><code>private string isrealdata(byte[] data)
+{
+    string txt = &quot;&quot;;
+    if (data[10] == 100)
+        txt = &quot;are you there?&quot;;
+    else
+        txt = &quot;nothing&quot;;
+    return txt;
+}
+
+private void _startserver(string _ip, int _port)
+{
+    tcplistener server = null;
+    try
+    {
+        server = new tcplistener(ipaddress.parse(_ip), _port);
+        server.start();
+        byte[] bytes = new byte[1024];
+        while (true)
+        {
+            tcpclient client = server.accepttcpclient();
+            string data = null;
+            networkstream stream = client.getstream();
+            int i;
+            while ((i = stream.read(bytes, 0, bytes.length)) != 0)
+            {
+                data = encoding.ascii.getstring(bytes, 0, i);
+                byte[] bytes_real = new byte[i];
+                buffer.blockcopy(bytes, 0, bytes_real, 0, i);
+                if (isrealdata(bytes_real) == &quot;are you there?&quot;) 
+                {        
+                    string _msg_reply = &quot;ok, here i am&quot;;
+                    byte[] reply = encoding.ascii.getbytes(_msg_reply);         
+                    stream.write(reply, 0, reply.length);  ///sent real data to client
+                    txt_log.invoke((action)(() =&gt;
+                    {
+                        txt_log.appendtext(datetime.now.tostring(&quot;yyyy-mm-dd hh:mm:ss.fff tt&quot;) + &quot; sent: &quot; + _msg_reply + &quot;\r\n&quot;);
+                    }));
+                }
+                else
+                {
+                    data = data.toupper();
+                    byte[] msg = encoding.ascii.getbytes(data);
+                    stream.write(msg, 0, msg.length); ///sent temporary data to client
+                }
+            }
+        }
+    }
+    catch (socketexception ex)
+    {
+        messagebox.show(&quot;_startserver: &quot; + ex.message);
+    }
+}
+
+private async task start_server()
+{
+    await task.run(() =&gt;
+    {
+        _startserver(&quot;192.168.10.15&quot;, 4444);
+    });
+}
+
+private void bt_start_click(object sender, eventargs e)
+{
+    start_server();
+}
+
+private void bt_send_click(object sender, eventargs e)
+{
+    string text = txt_msg.text;
+    ////how to send content parallel when user input from textbox component
+}
+</code></pre>
+<p>thanks you all.</p>","<p>after some debug and enhancement, now it' working for me. notify that, i just quite change in lasted code, based on the connection socket between server and client is established, give this socket object and using send/receive. that's it.</p>
+<pre><code>private tcpclient client;
+ 
+ private async void _startserver(string _ip, int _port)
+{
+    //code in here
+    client = server.accepttcpclient();
+    //code in here
+}
+
+private async task start_server()
+{
+        //code in here
+        task.delay(1000).wait();
+}
+
+private async void bt_start_click(object sender, eventargs e)
+{
+    await start_server();
+}
+
+private async task sendmsg(string msg)
+{
+    //code in here using sendasync &amp; receiveasync
+    return;
+}
+
+private async void bt_send_click(object sender, eventargs e)
+{
+    //code in here
+    await sendmsg(txt_msg.text);
+}
+</code></pre>
+<p>thank you all for advice.</p>",C#;winforms;sockets;tcpclient;networkstream

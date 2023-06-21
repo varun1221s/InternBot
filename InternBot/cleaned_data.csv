@@ -1,0 +1,316 @@
+Question Title,Question Body,Answer Body,Tags,cleaned_title
+Cuda error: device-side assert triggered on colab,"<p>i am trying to initialize a tensor on google colab with gpu enabled.</p>
+<pre class=""lang-py prettyprint-override""><code>device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+t = torch.tensor([1,2], device=device)
+</code></pre>
+<p>but i am getting this strange error.</p>
+<blockquote>
+<p>runtimeerror: cuda error: device-side assert triggered
+cuda kernel errors might be asynchronously reported at some other api call,so the stacktrace below might be incorrect.
+for debugging consider passing cuda_launch_blocking=1</p>
+</blockquote>
+<p>even by setting that environment variable to 1 seems not showing any further details.<br />
+anyone ever had this issue?</p>","<p>while i tried your code, and it did not give me an error, i can say that usually the best practice to debug cuda runtime errors: device-side assert like yours is to turn collab to cpu and recreate the error. it will give you a more useful traceback error.</p>
+<p>most of the time cuda runtime errors can be the cause of some index mismatching so like you tried to train a network with 10 output nodes on a dataset with 15 labels. and the thing with this cuda error is once you get this error once, you will recieve it for every operation you do with torch.tensors. this forces you to restart your notebook.</p>
+<p>i suggest you restart your notebook, get a more accuracate traceback by moving to cpu, and check the rest of your code especially if you train a model on set of targets somewhere.</p>",Pytorch;google-colaboratory;tensor,cuda error device side assert triggered colab
+How can i move old commits in a branch to a new branches?,"<p>i have a branch called <code>staging</code> that contains old commits that i would like to move to two separate branches.</p>
+<pre><code>a - b - c - d - e - f - g - h - i   staging
+</code></pre>
+<p>i would like to move commits <code>b</code> and <code>c</code> to a new branch: <code>feature-a</code>. then move commits <code>d</code>, <code>e</code>, and <code>f</code> to a new branch: <code>feature-b</code>.</p>
+<p>in the end my branches would look like this:</p>
+<pre><code>a - g - h - i   staging
+a - b - c       feature-a
+a - d - e - f   feature-b
+</code></pre>
+<p>the <code>staging</code> branch is public and other developers may have local versions of it. how can i accomplish this?</p>","<p>nb: there is probably a better way, but here's one way to do it.</p>
+<p>creating <code>feature-a</code> is easy:</p>
+<pre><code>git branch feature-a c
+</code></pre>
+<p>we can create <code>feature-b</code> by creating a new branch based on <code>a</code> and then using <code>cherry-pick</code>:</p>
+<pre><code>git checkout -b feature-b a
+git cherry-pick feature-a..f
+</code></pre>
+<p>that <code>r1..r2</code> expression is documented in the <code>git-rev-parse</code> man page:</p>
+<blockquote>
+<p>the .. (two-dot) range notation</p>
+<p>the <code>^r1 r2</code> set operation appears so often that there is a shorthand for it. when you have two commits <code>r1</code> and <code>r2</code> (named according to the syntax explained in specifying revisions above), you can ask for commits that are reachable from <code>r2</code> excluding those that are reachable from <code>r1</code> by <code>^r1 r2</code> and it can be written as <code>r1..r2</code>.</p>
+</blockquote>
+<p>lastly, we can use <code>git rebase -i --root</code> on the <code>staging</code> branch to remove commits b-f:</p>
+<pre><code>git checkout staging
+git rebase -i --root
+</code></pre>
+<hr />
+<p>in my test repository, this results in:</p>
+<pre><code>$ git log --oneline staging
+15326ce (head -&gt; staging) this is commit i
+3862020 this is commit h
+a26f0bb this is commit g
+9bc662c this is commit a
+
+$ git log --oneline feature-a
+b390f07 (feature-a) this is commit c
+1489cd1 this is commit b
+9bc662c this is commit a
+
+$ git log --oneline feature-b
+f8f3c18 (feature-b) this is commit f
+0eb0b08 this is commit e
+4e2ed05 this is commit d
+9bc662c this is commit a
+</code></pre>",Git;branching-and-merging;feature-branch,move old commits branch new branch
+"Sometimes when the function runs it works perfectly, other times it cannot access the properties of the object","<pre><code>const tj = require('@mapbox/togeojson');
+const fs = require('fs');
+
+const gpxtojson = async function (trailslug) {
+  // node doesn't have xml parsing or a dom. use xmldom
+  domparser = require('xmldom').domparser;
+
+  fs.readdir(`./public/traildata/${trailslug}/gpxfiles/`, (err, files) =&gt; {
+    let newgpx;
+    files.foreach(async (item, i) =&gt; {
+      const promise = new promise((res, rej) =&gt; {
+        fs.readfile(
+          `./public/traildata/${trailslug}/gpxfiles/${item}`,
+          'utf8',
+          async function (err, data) {
+            const gpx = await new domparser().parsefromstring(data);
+            const converted = await tj.gpx(gpx);
+            console.log(typeof converted);
+            converted.features[0].properties.name = item
+              .replace('-', ' ')
+              .split('.')[0];
+
+            if (i === 0) {
+              newgpx = converted;
+            }
+
+            if (i &gt; 0) {
+              newgpx.features.push(converted.features[0]);
+            }
+
+            if (i === files.length - 1) {
+              //   console.log(newgpx);
+              fs.writefile(
+                `./public/traildata/${trailslug}/mastergeojson`,
+                json.stringify(newgpx),
+                'utf-8',
+                (err) =&gt; {
+                  if (err) throw err;
+                  console.log('the file has been saved');
+                }
+              );
+            }
+            res(converted);
+          }
+        );
+      });
+      await promise;
+    });
+  });
+};
+
+gpxtojson('terra-cotta');
+</code></pre>
+<p>hey there, i am trying to make a program that converts gpx files into one geojson file. everything seems to be going well so far except for every one in 5 times i run the code, i get a <em><strong>typeerror: cannot read properties of undefined</strong></em> error from <strong>&quot;newgpx.features.push(converted.features[0])&quot;</strong></p>
+<p>i know the file is an object (as i have done the console.log(typeof converted) and it comes back as an object), i tried promisifying the entire foreach loop (but may have had an issue with the implementation).</p>
+<p><a href=""https://i.stack.imgur.com/d4e0t.png"" rel=""nofollow noreferrer"">console screenshot</a></p>
+<p>does anyone have a resource that might steer me in the right direction?</p>
+<p>thanks in advance.</p>","<p>here's a much simpler version that uses a <code>for</code> loop which is promise-aware (a <code>.foreach()</code> loop is not promise-aware) and uses the built-in promise versions of <code>readdir()</code>, <code>readfile()</code> and <code>writefile()</code> which, when combined with <code>await</code> makes the code a lot simpler.</p>
+<pre><code>const tj = require('@mapbox/togeojson');
+const fsp = require('fs').promises;
+const domparser = require('xmldom').domparser;
+
+const gpxtojson = async function (trailslug) {
+    const srcdir = `./public/traildata/${trailslug}/gpxfiles/`;
+    const files = await fsp.readdir(srcdir);
+
+    let newgpx;
+    for (let file of files) {
+        const fullpath = path.join(srcdir, file);
+        const filedata = await fsp.readfile(fullpath, {encoding: 'utf8'});
+        const gpx = new domparser().parsefromstring(filedata);
+        const converted = await tj.gpx(gpx);
+        converted.features[0].properties.name = file.replace('-', ' ').split('.')[0];
+        if (!newgpx) {
+            newgpx = converted;
+        } else {
+            newgpx.features.push(converted.features[0]);
+        }
+    }
+    await fsp.writefile(`./public/traildata/${trailslug}/mastergeojson`, json.stringify(newgpx), { encoding: 'utf8' });
+};
+
+gpxtojson('terra-cotta').catch(err =&gt; {
+    console.log(err);
+});
+</code></pre>",Javascript;node.js;json;geojson;gpx,sometimes function run work perfectly time cannot access property object
+What&#39;s a quick way to comment/uncomment lines in vim?,"<p>i have a ruby code file open in vi, there are lines commented out with <code>#</code>:</p>
+
+<pre><code>class search &lt; activerecord::migration
+  def self.up
+    # create_table :searches do |t|
+    #   t.integer :user_id
+    #   t.string :name
+    #   t.string :all_of
+    #   t.string :any_of
+    #   t.string :none_of
+    #   t.string :exact_phrase
+    # 
+    #   t.timestamps
+    # end
+  end
+
+  def self.down
+    # drop_table :searches
+  end
+end
+</code></pre>
+
+<p>say i want to uncomment all the lines in the first <code>def ... end</code> section. what's an efficient way to do that in vim?</p>
+
+<p>in general, i'm looking for an easy and fluid way to comment and uncomment lines. here i'm dealing with ruby code, but it could be javascript (<code>//</code>) or haml (<code>-#</code>).</p>","<p>i use the <a href=""http://www.vim.org/scripts/script.php?script_id=1218"" rel=""noreferrer"">nerd commenter script</a>. it lets you easily comment, uncomment or toggle comments in your code.</p>
+
+<p>as mentioned in the <a href=""https://stackoverflow.com/questions/1676632/whats-a-quick-way-to-comment-uncomment-lines-in-vim/1676775#comment63316440_1676775"">comments</a>:</p>
+
+<blockquote>
+  <p>for anyone who is confused by the usage, default leader is ""\"" so 10\cc will comment ten lines and 10\cu will uncomment those ten lines</p>
+</blockquote>",Vim;comments,quick way comment uncomment line vim
+Why can&#39;t i get cookie value in playwright?,"<blockquote>
+<p>firstly, sry for my poor english</p>
+</blockquote>
+<p>i want to use playwright to get the cookie, but i can't.
+i tried 3 ways i've found, and got nothing.</p>
+<ol>
+<li>using <code>page.on</code></li>
+</ol>
+<pre class=""lang-py prettyprint-override""><code>page.on('request',get_cookie)
+page.on('response',get_cookie)
+
+def get_cookie(request):
+    allheaders = request.all_headers()
+    print(allheaders)
+
+
+&gt;&gt;&gt;
+{'accept-ranges': 'bytes', 'age': '9576', 'cache-control': 'max-age=600', 'content-length': '6745', 'content-type': 'image/png', 'date': 'thu, 30 jun 2022 01:09:20 gmt', 'etag': '&quot;206578bcab2ad71:0&quot;', 'expires': 'thu, 30 jun 2022 01:19:20 gmt', 'last-modified': 'tue, 06 apr 2021 06:11:52 gmt', 'server': 'nws_spmid', 'x-cache-lookup': 'cache hit', 'x-daa-tunnel': 'hop_count=1', 'x-nws-log-uuid': '16892018456232999193', 'x-powered-by': 'asp.net'}
+{'accept-ranges': 'bytes', 'age': '9576', 'cache-control': 'max-age=600', 'content-length': '6745', 'content-type': 'image/png', 'date': 'thu, 30 jun 2022 01:09:20 gmt', 'etag': '&quot;206578bcab2ad71:0&quot;', 'expires': 'thu, 30 jun 2022 01:19:20 gmt', 'last-modified': 'tue, 06 apr 2021 06:11:52 gmt', 'server': 'nws_spmid', 'x-cache-lookup': 'cache hit', 'x-daa-tunnel': 'hop_count=1', 'x-nws-log-uuid': '16892018456232999193', 'x-powered-by': 'asp.net'}
+...(and more like this)
+</code></pre>
+<p>returned somthing, but no cookie here</p>
+<br>
+<ol start=""2"">
+<li>using <code>browser_context.cookies</code> resolved! thx for @charchit</li>
+</ol>
+<pre class=""lang-py prettyprint-override""><code>context = browser.new_context();
+page = context.new_page()
+page.goto(url)
+cookies = context.cookies
+print(cookies)
+
+&gt;&gt;&gt;
+&lt;bound method browsercontext.cookies of &lt;browsercontext browser=&lt;browser type=&lt;browsertype name=chromium executable_path=/users/swong/library/caches/ms-playwright/chromium-1005/chrome-mac/chromium.app/contents/macos/chromium&gt; version=102.0.5005.40&gt;&gt;&gt;
+</code></pre>
+<br>
+<ol start=""3"">
+<li>using js</li>
+</ol>
+<pre class=""lang-py prettyprint-override""><code>cookie = page.evaluate('console.log(document.cookie)')
+print(cookie)
+
+&gt;&gt;&gt;
+none
+</code></pre>
+<br>
+<p>i opened the network tab from the chromium page,there was the cookie i want in requests' header.</p>
+<p>please help me, thank you all!</p>
+<p>here's my code example. the site is in chinese language, and hope you will not mind it. it's just a simple login page.</p>
+<pre class=""lang-py prettyprint-override""><code>from playwright.sync_api import sync_playwright
+
+url = 'https://so.gushiwen.cn/user/login.aspx'
+
+def get_cookie(request_or_reqponse):
+    headersarray = request_or_reqponse.headers_array()
+    print('「headersarray」：', headersarray)
+
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=false)
+    context = browser.new_context();
+    page = context.new_page()
+
+    page.goto(url)
+    page.fill('#email','6j3y4ecy@spymail.one')
+    page.fill('#pwd', '6j3y4ecy@spymail.one')
+
+    page.wait_for_timeout(5000) # imput the captcha code manually
+
+    page.on('request',get_cookie)
+    page.on('response',get_cookie)
+
+    print('loging in...')
+    page.click('#denglu')
+
+    page.wait_for_timeout(50000) # wait for nothing
+
+    browser.close()
+</code></pre>","<p>in your second method, change <code>cookies = context.cookies</code> to <code>cookies = context.cookies()</code>. it's a method, you need to call it. check the <a href=""https://playwright.dev/python/docs/api/class-browsercontext#browser-context-cookies"" rel=""nofollow noreferrer""> documentation</a>:</p>
+<pre><code>context = browser.new_context();
+page = context.new_page()
+page.goto(url)
+cookies = context.cookies()
+print(cookies)
+</code></pre>
+<p>also, doing it like your first method is not advisable. this is because even if you get the <code>cookie</code> header from the response, you can't really store and use it else where unless you use a factory function or a global variable. besides, why do that when <code>browsercontext</code> specifically has a method for it :)</p>
+<p><strong>edit</strong></p>
+<p>the reason the first method seemingly does not work is because it returns the headers of the request and responses made. cookies can also be created through javascript on the page itself, these may not show up in the headers at all.</p>
+<p>secondly, from the headers you have printed out for the first method in your question, it seems like it was only for a single request. after running your code, there were a lot more requests and responses received, which in place printed out a lot more headers. from the responses in particular, you can retrieve the cookies set by the server by searching for the header <code>'set-cookie'</code>.</p>",Python;cookies;scrapy;playwright,get cookie value playwright
+String to map object in javascript,"<p><div class=""snippet"" data-lang=""js"" data-hide=""false"" data-console=""true"" data-babel=""false"">
+<div class=""snippet-code"">
+<pre class=""snippet-code-js lang-js prettyprint-override""><code>var map = new map();
+map.set('key1','value1');
+map.set('key2','value2');
+
+console.log(map);
+console.log(map.tostring());
+console.log(json.parse(map.tostring()))
+//uncaught syntaxerror: unexpected token o in json at position 1</code></pre>
+</div>
+</div>
+</p>
+
+<p>converted map object to string using <code>tostring()</code> and now i am unable to convert to map object from string.</p>","<p>to store a stringified result, better to use plain json object, however using <code>map</code> you can create a array of entries and stringify that</p>
+
+<pre><code>var str = json.stringify(array.from( map.entries()));
+</code></pre>
+
+<p>and then again you can parse the json string to array and construct a new <code>map</code></p>
+
+<pre><code>var map = new map(json.parse(str))
+</code></pre>
+
+<p><div class=""snippet"" data-lang=""js"" data-hide=""true"" data-console=""true"" data-babel=""false"">
+<div class=""snippet-code snippet-currently-hidden"">
+<pre class=""snippet-code-js lang-js prettyprint-override""><code>var map1 = new map();
+map1.set('key1','value1');
+map1.set('key2','value2');
+
+var str = json.stringify(array.from( map1.entries()));
+
+//store the string somewhere or pass it to someone
+//or however you want to carry it
+
+//re construct the map again
+var map2 = new map(json.parse(str))
+
+console.log('key1', map2.get('key1'));
+console.log('key2', map2.get('key2'));</code></pre>
+</div>
+</div>
+</p>
+
+<p>however, <code>array.from(map)</code>, or using will also return the same thing and can be used here, but someone cannot grantee what it's actually returns until execute it, on the other hand, getting an iterator and then forming an array is more conventional and readable, however array.from(map) might be a better solution. also <code>spread operator</code> can be used over <strong>map</strong> <code>[...map]</code> or <strong>map.entries()</strong> <code>[...map.entries()]</code> to form the same array of entries.</p>",Javascript,string map object javascript
+,,,,nan
+,,,,nan
+,,,,nan
+,,,,nan
